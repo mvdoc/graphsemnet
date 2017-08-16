@@ -1,4 +1,5 @@
 """Graphing Semantic Network module"""
+from memoize import memoize
 import numpy as np
 from sklearn.datasets import make_blobs
 from scipy.spatial.distance import pdist, squareform
@@ -15,6 +16,7 @@ def rescale(array):
 
 
 # XXX: optimize this
+@memoize
 def compute_paths(A, depth):
     """Compute paths of length `depth` in a graph with adjacency matrix A
 
@@ -37,6 +39,7 @@ def compute_paths(A, depth):
     if depth == 1:
         return A
     As = [A]
+    # XXX: this loop can be refactored to speed up computation
     for i_depth in range(1, depth):
         B = np.dot(A, As[-1])
         for A_ in As:

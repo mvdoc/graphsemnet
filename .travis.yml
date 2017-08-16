@@ -13,7 +13,7 @@ git:
   depth: 99999
 
 install:
-  - pip install scikit-learn numpy scipy networkx
+  - pip install -r graphsemnet/requirements.txt
 script:
   - pytest graphsemnet
 
