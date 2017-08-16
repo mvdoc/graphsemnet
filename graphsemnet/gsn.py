@@ -1,5 +1,17 @@
 """Graphing Semantic Network module"""
 import numpy as np
+from sklearn.datasets import make_blobs
+from scipy.spatial.distance import pdist, squareform
+
+
+def rescale(array):
+    """Rescales an array between 0. and 1."""
+    mn = array.min()
+    mx = array.max()
+    array_ = array.copy()
+    array_ -= mn
+    array_ /= (mx-mn)
+    return array_
 
 
 # XXX: optimize this
@@ -54,3 +66,47 @@ def compute_decay(gamma, A, depth):
         amount of decay for each node in the graph
     """
     return (gamma ** depth) * compute_paths(A, depth)
+
+
+def simulate_distance_matrix(n_features, n_concepts, n_clusters, seed=4324):
+    """
+    Simulate `n_concepts` clustered in `n_clusters`, each of which has
+    `n_features`.
+
+    Arguments
+    ---------
+    n_features : int
+    n_concepts : int
+    n_clusters : int
+    seed : int
+
+    Results
+    -------
+    dist_x : np.array (n_concepts, n_concepts)
+        a correlation matrix ordered according to the clusters
+    """
+    X, y = make_blobs(n_samples=n_concepts * n_clusters, n_features=n_features,
+                      centers=n_clusters, random_state=seed)
+    dist_x = 1. - pdist(X, metric='correlation')
+    y_sort = np.argsort(y)
+    dist_x = squareform(dist_x)[y_sort, :][:, y_sort]
+    return dist_x
+
+
+def normalize_distance_matrix(dist):
+    """
+    Normalizes a distance matrix across columns.
+
+    Arguments
+    ---------
+    dist : np.array (n_concepts, n_concepts)
+
+    Returns
+    -------
+    dist_normalized : np.array (n_concepts, n_concepts)
+        a normalized version of dist across columns.
+    """
+    dist_ = dist.copy()
+    dist_ = np.apply_along_axis(rescale, 0, dist_)
+    dist_ /= dist_.sum(axis=0)
+    return dist_

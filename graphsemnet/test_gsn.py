@@ -1,6 +1,6 @@
 import numpy as np
 from numpy.testing import assert_array_equal
-from .gsn import compute_paths, compute_decay
+from .gsn import rescale, compute_paths, compute_decay
 A = np.array([
     [0, 1, 1, 0],
     [1, 0, 0, 1],
@@ -38,3 +38,10 @@ def test_compute_decay():
     gamma = 0.5
     for i, A_true in enumerate([np.eye(A.shape[0]), A, A2, A3, A4]):
         assert_array_equal(A_true * (gamma**i), compute_decay(gamma, A, i))
+
+
+def test_rescale():
+    array = np.random.randn(10, 1000)
+    assert((array.min(), array.max()) != (0., 1.))
+    array = rescale(array)
+    assert((array.min(), array.max()) == (0., 1.))
