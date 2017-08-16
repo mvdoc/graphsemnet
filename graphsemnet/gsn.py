@@ -3,6 +3,7 @@ from memoize import memoize
 import numpy as np
 from sklearn.datasets import make_blobs
 from scipy.spatial.distance import pdist, squareform
+from scipy.interpolate import interp1d
 
 
 def rescale(array):
@@ -113,3 +114,29 @@ def normalize_distance_matrix(dist):
     dist_ = np.apply_along_axis(rescale, 0, dist_)
     dist_ /= dist_.sum(axis=0)
     return dist_
+
+
+def compute_nmph(min_y, inflection_x, inflection_y, y_max):
+    """
+    Compute Non Monotonic Plasticity Hypothesis function
+
+    Arguments
+    ---------
+    min_y : float [-1, 1]
+        minimum value of the nmph function
+    inflection_x : float [0, 1]
+        x-coordinate of the point of inflection
+    inflection_y : float [-1, 1]
+        y-coordinate of the point of inflection
+    y_max : float [-1, 1]
+        y-max of nmph when x = 1
+
+    Returns
+    -------
+    nmph : nmph function [0, 1] -> [-1, 1]
+    """
+    min_x = inflection_x / 2.
+    x = [0, min_x, inflection_x, 1.]
+    y = [0, min_y, inflection_y, y_max]
+    nmph = interp1d(x, y)
+    return nmph
