@@ -1,0 +1,22 @@
+# vim ft=yaml
+# travis-ci.org definition for DueCredit build
+language: python
+sudo: false
+python:
+  - "2.7"
+  - "3.6"
+
+cache:
+  - pip
+
+git:
+  depth: 99999
+
+install:
+  - pip install scikit-learn numpy scipy networkx
+script:
+  - pytest graphsemnet
+
+#after_success:
+#  - coveralls
+#  - codecov
