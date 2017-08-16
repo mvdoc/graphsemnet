@@ -1,0 +1,5 @@
+numpy
+scipy
+scikit-learn
+memoize2
+networkx
