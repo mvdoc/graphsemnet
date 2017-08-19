@@ -28,9 +28,10 @@ def semantic_dsm_safe(word_list, keyed_vectors):
     for word in word_list:
         try:
             vectors.append(keyed_vectors.word_vec(word))
-            labels.append(word)
         except:
             pass
+        else:
+            labels.append(word)
     vectors = np.array(vectors)
     matrix = pdist(vectors, metric='cosine')
     return (matrix, labels)
