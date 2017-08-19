@@ -116,7 +116,7 @@ def normalize_distance_matrix(dist):
     return dist_
 
 
-def compute_nmph(min_y, inflection_x, inflection_y, y_max):
+def compute_nmph(min_y=-0.1, inflection_x=0.5, inflection_y=0.05, y_max=0.1):
     """
     Compute Non Monotonic Plasticity Hypothesis function
 
@@ -140,3 +140,57 @@ def compute_nmph(min_y, inflection_x, inflection_y, y_max):
     y = [0, min_y, inflection_y, y_max]
     nmph = interp1d(x, y)
     return nmph
+
+
+def compute_adjacency(W):
+    """Given a weight matrix W, return an adjacency matrix"""
+    A = W.copy()
+    A[A > 0.] = 1.
+    return A
+
+
+def rect(x):
+    """ReLU function"""
+    return np.clip(x, 0, 1.)
+
+
+def spread_activation(W0, ACT0, nmph, gamma, d):
+    """Spread activation with NMPH on a graph with initial weight W0,
+    and activation ACT0
+
+    Arguments
+    ---------
+    W0 : array (n_nodes, n_nodes)
+        initial weights of the graph
+    ACT0 : array (1, n_nodes)
+        row array of initial activations
+    npmh : function [0, 1] -> [-1, 1]
+        nmph function, generated with `compute_nmph`
+    gamma : float [0, 1]
+        decay parameter
+    d : int
+        how far the activation is allowed to spread
+
+    Returns
+    -------
+    Ws : list of arrays (n_nodes, n_nodes)
+    ACT : list of arrays
+        activations for every depth
+    """
+    # initialize values
+    assert (ACT0.ndim == 2 and (ACT0.shape[0] <= ACT0.shape[1]))
+    A = compute_adjacency(W0)
+    Ws = [W0]
+    ACT = [ACT0]
+    dW = np.zeros(ACT0.shape)
+
+    # loop
+    for i in range(d):
+        # update W
+        W_i = rect(Ws[-1] + nmph(ACT[-1]).T * A)
+        Ws.append(W_i)
+        # update ACT
+        dW += gamma ** i * np.dot(ACT[i], np.multiply.reduce(Ws))
+        ACT_ = rect(dW)
+        ACT.append(ACT_)
+    return Ws, ACT
