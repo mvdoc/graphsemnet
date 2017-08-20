@@ -115,51 +115,11 @@ class SemanticGraph(object):
         np.fill_diagonal(self.adj, 0)
         self.adj = np.clip(self.adj, 0, 1)
 
-    def activate(self,
-                 word_from,
-                 strength=1.0,
-                 decay=.8,
-                 new_adj=None,
-                 debug=False):
-        """Spread activation, adjusting synaptic weights."""
-        if debug:
-            print("{0} at strength {1}".format(word_from, strength))
-
-        # Make a copy of the input adjacency matrix to send downstream
-        if new_adj is None:
-            new_adj = copy.copy(self.adj)
-        else:
-            new_adj = copy.copy(new_adj)
-
-        word_from_i = self.labels.index(word_from)
-        next_layer_activations = new_adj[word_from_i] * strength * decay
-        if debug:
-            print(next_layer_activations.round(2))
-
-        # Prevent loops by zeroing out weights back to already-activated nodes
-        new_adj[:, word_from_i] = 0
-
-        for word_to_i, activation in enumerate(next_layer_activations):
-            if activation > self.lower_threshold:
-
-                # Update edge weights
-                word_to = self.labels[word_to_i]
-                change = self.xcal(activation)
-                if debug:
-                    print("Updating edge: {0} -> {1}, + {2}".format(
-                        word_from, word_to, change
-                    ))
-                self.adj[word_from_i, word_to_i] += change
-                if not self.directed:
-                    self.adj[word_to_i, word_from_i] = self.adj[
-                        word_from_i, word_to_i
-                    ]
-
-                self.adj = np.clip(self.adj, 0, 1)
-
-                self.activate(
-                    self.labels[word_to_i],
-                    strength=activation,
-                    new_adj=new_adj,
-                    debug=debug
-                )
+    def activate_words(self, words, decay=.5, debug=False):
+        """Given a list of words, activate and adjust weights."""
+        assert all([word in self.labels for word in words])
+        activation = np.zeros(len(self.labels))
+        ix = [self.labels.index(word) for word in words]
+        activation[ix] = 1
+        acts = self.activate_hebb(activation, decay=decay, debug=debug)
+        self.weight_adjust_hebb(acts, debug=debug)
