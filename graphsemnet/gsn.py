@@ -154,7 +154,7 @@ def rect(x):
     return np.clip(x, 0, 1.)
 
 
-def spread_activation(W0, ACT0, nmph, gamma, alpha, d):
+def spread_activation(W0, ACT0, nmph, gamma=0.8, alpha=0.5, lambda_=1, d=3):
     """Spread activation with NMPH on a graph with initial weight W0,
     and activation ACT0
 
@@ -170,6 +170,8 @@ def spread_activation(W0, ACT0, nmph, gamma, alpha, d):
         decay parameter
     alpha : float [0, 1]
         learning parameter
+    lambda_ : float [0, 1]
+        decay parameter for past activations
     d : int
         how far the activation is allowed to spread
 
@@ -193,7 +195,7 @@ def spread_activation(W0, ACT0, nmph, gamma, alpha, d):
         Ws.append(W_i)
         # update ACT
         dACT += gamma ** i * np.dot(ACT[-1], np.multiply.reduce(Ws))
-        ACT_ = rect(ACT[-1] + dACT)
+        ACT_ = rect((lambda_**i) * ACT[-1] + dACT)
         ACT.append(ACT_)
         #print("Loop {0}: len(Ws): {1}\tlen(ACT): {2}".format(i, len(Ws), len(ACT)))
     return Ws, ACT
