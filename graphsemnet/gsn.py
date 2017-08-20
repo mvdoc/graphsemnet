@@ -187,12 +187,13 @@ def spread_activation(W0, ACT0, nmph, gamma, alpha, d):
     dACT = np.zeros(ACT0.shape)
 
     # loop
-    for i in range(d):
+    for i in range(1, d):
         # update W
         W_i = rect(Ws[-1] + alpha * nmph(ACT[-1]).T * A)
         Ws.append(W_i)
         # update ACT
-        dACT += gamma ** i * np.dot(ACT[i], np.multiply.reduce(Ws))
+        dACT += gamma ** i * np.dot(ACT[-1], np.multiply.reduce(Ws))
         ACT_ = rect(ACT[-1] + dACT)
         ACT.append(ACT_)
+        #print("Loop {0}: len(Ws): {1}\tlen(ACT): {2}".format(i, len(Ws), len(ACT)))
     return Ws, ACT
