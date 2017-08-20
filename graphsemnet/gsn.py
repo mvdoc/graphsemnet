@@ -182,7 +182,7 @@ def spread_activation(W0, ACT0, nmph, gamma, d):
     A = compute_adjacency(W0)
     Ws = [W0]
     ACT = [ACT0]
-    dW = np.zeros(ACT0.shape)
+    dACT = np.zeros(ACT0.shape)
 
     # loop
     for i in range(d):
@@ -190,7 +190,7 @@ def spread_activation(W0, ACT0, nmph, gamma, d):
         W_i = rect(Ws[-1] + nmph(ACT[-1]).T * A)
         Ws.append(W_i)
         # update ACT
-        dW += gamma ** i * np.dot(ACT[i], np.multiply.reduce(Ws))
-        ACT_ = rect(dW)
+        dACT += gamma ** i * np.dot(ACT[i], np.multiply.reduce(Ws))
+        ACT_ = rect(ACT[-1] + dACT)
         ACT.append(ACT_)
     return Ws, ACT
