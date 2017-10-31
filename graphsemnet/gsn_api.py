@@ -3,15 +3,19 @@ import numpy as np
 
 
 class GraphOperator(object):
-    def __init__(self, graph, operate_fx):
+    def __init__(self, graph, operate_fx, xcal_fx, decay):
         self.graph = graph
         self.operate_fx = operate_fx
+        self.xcal_fx = xcal_fx
+        self.decay = decay
 
-    def activate(self, activations, xcal, decay):
-        return self.operate_fx(self.graph, activations, xcal, decay)
+    def activate(self, activations):
+        return self.operate_fx(
+            self.graph, activations, self.xcal_fx, self.decay
+        )
 
-    def activate_replace(self, activations, xcal, decay):
-        self.graph = self.activate(self.graph, activations, xcal, decay)
+    def activate_replace(self, activations):
+        self.graph = self.activate(activations)
         return self.graph
 
 
