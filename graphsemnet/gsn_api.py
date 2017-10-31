@@ -7,8 +7,12 @@ class GraphOperator(object):
         self.graph = graph
         self.operate_fx = operate_fx
 
-    def activate(self, activations, xcal):
-        return self.operate_fx(self.graph, activations)
+    def activate(self, activations, xcal, decay):
+        return self.operate_fx(self.graph, activations, xcal, decay)
+
+    def activate_replace(self, activations, xcal, decay):
+        self.graph = self.activate(self.graph, activations, xcal, decay)
+        return self.graph
 
 
 def operate_recur(graph, activations, xcal, decay):
@@ -28,18 +32,23 @@ def propagate_recur(graph, activations, xcal, decay=0.8, new_adj=None,
         new_adj = copy.copy(new_adj)
 
     new_adj[:, xcal(activations) != 0] = 0
-    down_acts = np.clip(np.dot(new_adj.T, activations) * decay, 0, 1)
-    down_acts[xcal(down_acts) == 0] = 0  # not necessary?
+    downstream_activations = np.clip(
+        np.dot(new_adj.T, activations) * decay, 0, 1
+    )
+
+    # not necessary?
+    downstream_activations[xcal(downstream_activations) == 0] = 0
 
     if debug:
         print(f"init acts: {init_acts}")
-        print(f"down_acts: {down_acts}")
+        print(f"down_acts: {downstream_activations}")
 
-    if np.all(down_acts == 0):
+    if np.all(downstream_activations == 0):
         return activations
     else:
-        return activations + activate_hebb_recur(
-            down_acts, decay=decay, new_adj=new_adj, debug=debug
+        return activations + propagate_recur(
+            graph, downstream_activations, xcal,
+            decay=decay, new_adj=new_adj, debug=debug
         )
 
 
