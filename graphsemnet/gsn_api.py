@@ -25,14 +25,18 @@ def operate_recur(graph, activations, xcal, decay):
 
 
 def operate_depth(graph, activations, xcal, decay):
-    pass
+    activations = activations[None, :]
+    Ws, ACT = spread_activation(graph.adj, activations, xcal, gamma=decay)
+    result_graph = copy.deepcopy(graph)
+    result_graph.adj = Ws[-1]
+    return result_graph
 
 
 def propagate_recur(graph, activations, xcal, decay=0.8, new_adj=None,
                     debug=False):
     """Fire together?
 
-    init_activations: 1d vector of activation strengths for each node
+    activations: 1d vector of activation strengths for each node
     """
     if new_adj is None:
         new_adj = copy.copy(graph.adj)
@@ -63,13 +67,12 @@ def propagate_recur(graph, activations, xcal, decay=0.8, new_adj=None,
 def reweight_recur(graph, activations, xcal, debug=False):
     """Wire together.
 
-    activations: 1d vector of actiation strengths for each node, used for
-                 weight updating.
+    activations: 1d vector of actiation strengths for each node
     """
     # for each node, change all of its input weights according to the xcal
     # modify both weights according to the minimum activation of the nodes
     if debug:
-        print(f"adjust input acts: {activations}")
+        print(f"input activations: {activations}")
 
     new_graph = copy.deepcopy(graph)
 
