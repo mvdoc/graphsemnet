@@ -1,7 +1,9 @@
 """Graphing Semantic Network module"""
+from memoize import memoize
 import numpy as np
 from sklearn.datasets import make_blobs
 from scipy.spatial.distance import pdist, squareform
+from scipy.interpolate import interp1d
 
 
 def rescale(array):
@@ -15,6 +17,7 @@ def rescale(array):
 
 
 # XXX: optimize this
+@memoize
 def compute_paths(A, depth):
     """Compute paths of length `depth` in a graph with adjacency matrix A
 
@@ -37,6 +40,7 @@ def compute_paths(A, depth):
     if depth == 1:
         return A
     As = [A]
+    # XXX: this loop can be refactored to speed up computation
     for i_depth in range(1, depth):
         B = np.dot(A, As[-1])
         for A_ in As:
@@ -110,3 +114,88 @@ def normalize_distance_matrix(dist):
     dist_ = np.apply_along_axis(rescale, 0, dist_)
     dist_ /= dist_.sum(axis=0)
     return dist_
+
+
+def compute_nmph(min_y=-0.1, inflection_x=0.5, inflection_y=0.05, y_max=0.1):
+    """
+    Compute Non Monotonic Plasticity Hypothesis function
+
+    Arguments
+    ---------
+    min_y : float [-1, 1]
+        minimum value of the nmph function
+    inflection_x : float [0, 1]
+        x-coordinate of the point of inflection
+    inflection_y : float [-1, 1]
+        y-coordinate of the point of inflection
+    y_max : float [-1, 1]
+        y-max of nmph when x = 1
+
+    Returns
+    -------
+    nmph : nmph function [0, 1] -> [-1, 1]
+    """
+    min_x = inflection_x / 2.
+    x = [0, min_x, inflection_x, 1.]
+    y = [0, min_y, inflection_y, y_max]
+    nmph = interp1d(x, y)
+    return nmph
+
+
+def compute_adjacency(W):
+    """Given a weight matrix W, return an adjacency matrix"""
+    A = W.copy()
+    A[A > 0.] = 1.
+    return A
+
+
+def rect(x):
+    """ReLU function"""
+    return np.clip(x, 0, 1.)
+
+
+def spread_activation(W0, ACT0, nmph, gamma=0.8, alpha=0.5, lambda_=1, d=3):
+    """Spread activation with NMPH on a graph with initial weight W0,
+    and activation ACT0
+
+    Arguments
+    ---------
+    W0 : array (n_nodes, n_nodes)
+        initial weights of the graph
+    ACT0 : array (1, n_nodes)
+        row array of initial activations
+    npmh : function [0, 1] -> [-1, 1]
+        nmph function, generated with `compute_nmph`
+    gamma : float [0, 1]
+        decay parameter
+    alpha : float [0, 1]
+        learning parameter
+    lambda_ : float [0, 1]
+        decay parameter for past activations
+    d : int
+        how far the activation is allowed to spread
+
+    Returns
+    -------
+    Ws : list of arrays (n_nodes, n_nodes)
+    ACT : list of arrays
+        activations for every depth
+    """
+    # initialize values
+    assert (ACT0.ndim == 2 and (ACT0.shape[0] <= ACT0.shape[1]))
+    A = compute_adjacency(W0)
+    Ws = [W0]
+    ACT = [ACT0]
+    dACT = np.zeros(ACT0.shape)
+
+    # loop
+    for i in range(1, d):
+        # update W
+        W_i = rect(Ws[-1] + alpha * nmph(ACT[-1]).T * A)
+        Ws.append(W_i)
+        # update ACT
+        dACT += gamma ** i * np.dot(ACT[-1], np.multiply.reduce(Ws))
+        ACT_ = rect((lambda_**i) * ACT[-1] + dACT)
+        ACT.append(ACT_)
+        #print("Loop {0}: len(Ws): {1}\tlen(ACT): {2}".format(i, len(Ws), len(ACT)))
+    return Ws, ACT

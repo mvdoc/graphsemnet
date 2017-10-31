@@ -1,6 +1,6 @@
 import numpy as np
-from numpy.testing import assert_array_equal
-from .gsn import rescale, compute_paths, compute_decay
+from numpy.testing import assert_array_equal, assert_almost_equal
+from .gsn import rescale, compute_paths, compute_decay, compute_nmph
 A = np.array([
     [0, 1, 1, 0],
     [1, 0, 0, 1],
@@ -45,3 +45,16 @@ def test_rescale():
     assert((array.min(), array.max()) != (0., 1.))
     array = rescale(array)
     assert((array.min(), array.max()) == (0., 1.))
+
+
+def test_compute_nmph():
+    min_y, inflection_x, inflection_y, max_y = [-.5, 0.5, 0.3, 0.6]
+    nmph = compute_nmph(min_y, inflection_x, inflection_y, max_y)
+    # start
+    assert_almost_equal(nmph(0.), 0.)
+    # inflection
+    assert_almost_equal(nmph(inflection_x), inflection_y)
+    # minimum should be at inflection_x / 2.
+    assert_almost_equal(nmph(inflection_x/2.), min_y)
+    # max
+    assert_almost_equal(nmph(1.), max_y)
