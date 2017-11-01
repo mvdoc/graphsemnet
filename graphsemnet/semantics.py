@@ -1,7 +1,7 @@
 """Semantic graphs."""
 import random
 import numpy as np
-from scipy.spatial.distance import pdist
+from scipy.spatial.distance import pdist, squareform
 
 
 def connected_word_list(seed_word, keyed_vectors, n_iterations=5):
