@@ -1,7 +1,23 @@
 from scipy.interpolate import interp1d
 
 
-def get_xcal(dip_center, dip_width, min_adjust, max_adjust):
+def get_xcal(dip_center, dip_width, y_min, y_max):
+    """
+    Function for differentially reweighting weak vs strong graph edges
+
+    xcal function with symmetrical dip.
+
+    Arguments
+    ---------
+    dip_center : float [0, 1]
+    dip_width : float [0, 1]
+    y_min : float [-1, 1]
+    y_max : float [-1, 1]
+
+    Returns
+    -------
+    function [0, 1] -> [y_min, y_max]
+    """
     dip_half_width = dip_width / 2
     xp = [
         0,
@@ -13,9 +29,9 @@ def get_xcal(dip_center, dip_width, min_adjust, max_adjust):
     fp = [
         0,
         0,
-        min_adjust,
+        y_min,
         0,
-        max_adjust
+        y_max
     ]
     return interp1d(xp, fp)
 
