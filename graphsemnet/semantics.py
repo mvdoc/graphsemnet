@@ -40,7 +40,27 @@ def semantic_dsm_safe(word_list, keyed_vectors):
 
 
 class SemanticGraph(object):
+    """A graph where nodes are concepts and edges are association strengths.
+    """
     def __init__(self, adj=None, labels=None, dsm=None, directed=True):
+        """Create a SemanticGraph.
+
+        Can initialize using either a weight adjacency matrix or a
+        dissimilarity matrix (but not both).
+
+        Arguments
+        ---------
+        adj : np.array (n x n) or list (length n) of lists (length n)
+            Matrix of edge weights
+        labels : list (length n)
+            Node labels
+        dsm : np.array (n x n)
+            Matrix of node dissimilarities. Can also be 1-dimensional output,
+            as from scipy.spatial.distance.pdist
+        directed : bool
+            Store whether the graph is directed so functions that operate on
+            the graph can modify their behavior.
+        """
         if dsm is None:
             self.adj = np.array(adj)
         else:
