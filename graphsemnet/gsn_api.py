@@ -3,28 +3,47 @@ import numpy as np
 
 
 class GraphOperator(object):
+    """Wrapper object for functions that activate and reweight a semantic graph
+    """
     def __init__(self, graph, operate_fx, xcal_fx, decay):
+        """Create a wrapper object for graph activation and reweighting.
+
+        Arguments
+        ---------
+        graph : SemanticGraph
+        operate_fx : function [graph, activations, xcal_fx, decay] ->
+                [SemanticGraph]
+            Function describing how to activate and reweight the graph
+        xcal_fx : function [0, 1] -> float
+            Scaling function for edge reweighting
+        decay : float
+            Decay coefficient for activation propagation in operate_fx
+        """
         self.graph = graph
         self.operate_fx = operate_fx
         self.xcal_fx = xcal_fx
         self.decay = decay
 
     def activate(self, activations):
+        """Call operate_fx with stored arguments and return result."""
         return self.operate_fx(
             self.graph, activations, self.xcal_fx, self.decay
         )
 
     def activate_replace(self, activations):
+        """Replace self.graph with operate_fx result."""
         self.graph = self.activate(activations)
         return self.graph
 
 
 def operate_recur(graph, activations, xcal, decay):
+    """Wrapper for depth-first activation and reweighting."""
     new_activations = propagate_recur(graph, activations, xcal, decay)
     return reweight_recur(graph, new_activations, xcal)
 
 
 def operate_depth(graph, activations, xcal, decay):
+    """Wrapper for breadth-first activation and reweighting."""
     activations = activations[None, :]
     Ws, ACT = spread_activation(graph.adj, activations, xcal, gamma=decay)
     result_graph = copy.deepcopy(graph)
@@ -52,7 +71,7 @@ def propagate_recur(graph, activations, xcal, decay=0.8, new_adj=None,
     downstream_activations[xcal(downstream_activations) == 0] = 0
 
     if debug:
-        print(f"init acts: {init_acts}")
+        print(f"init acts: {activations}")
         print(f"down_acts: {downstream_activations}")
 
     if np.all(downstream_activations == 0):
