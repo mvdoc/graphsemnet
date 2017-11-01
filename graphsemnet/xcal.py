@@ -1,9 +1,52 @@
 from scipy.interpolate import interp1d
 
 
+def get_xcal_general(dip_start, dip_center, dip_end, inflection_x,
+                     inflection_y, y_min, y_max):
+    """
+    Function for different reweighting of weak vs. strong graph edges.
+
+    Generalization comprising features of both get_xcal() and compute_nmph().
+
+    Arguments
+    ---------
+    dip_start : float [0, 1]
+    dip_center : float [dip_start, dip_end]
+    dip_end : float [dip_start, 1]
+    inflection_x : float [dip_end, 1]
+    inflection_y : float
+    y_min : float
+    y_max : float
+
+    Returns
+    -------
+    function [0, 1] -> [y_min, y_max]
+    """
+    assert dip_center > dip_start
+    assert dip_end > dip_center
+    assert inflection_x > dip_end
+    xp = [
+        0,
+        dip_start,
+        dip_center,
+        dip_end,
+        inflection_x,
+        1
+    ]
+    fp = [
+        0,
+        0,
+        y_min,
+        0,
+        inflection_y,
+        y_max
+    ]
+    return interp1d(xp, fp)
+
+
 def get_xcal(dip_center, dip_width, y_min, y_max):
     """
-    Function for differentially reweighting weak vs strong graph edges
+    Function for different reweighting of weak vs. strong graph edges
 
     xcal function with symmetrical dip.
 
@@ -11,8 +54,8 @@ def get_xcal(dip_center, dip_width, y_min, y_max):
     ---------
     dip_center : float [0, 1]
     dip_width : float [0, 1]
-    y_min : float [-1, 1]
-    y_max : float [-1, 1]
+    y_min : float
+    y_max : float
 
     Returns
     -------
