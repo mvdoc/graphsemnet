@@ -39,13 +39,13 @@ class GraphOperator(object):
         return self.graph, self.last_activations
 
 
-def operate_recur(graph, activations, xcal, decay):
+def operate_depth(graph, activations, xcal, decay):
     """Wrapper for depth-first activation and reweighting."""
     new_activations = propagate_recur(graph, activations, xcal, decay)
     return reweight_recur(graph, new_activations, xcal), new_activations
 
 
-def operate_depth(graph, activations, xcal, decay, **kwargs):
+def operate_breadth(graph, activations, xcal, decay, **kwargs):
     """Wrapper for breadth-first activation and reweighting."""
     activations = activations[None, :]
     Ws, ACT = spread_activation(graph.adj, activations, xcal, gamma=decay,
