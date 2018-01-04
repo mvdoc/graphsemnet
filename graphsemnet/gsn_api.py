@@ -66,8 +66,6 @@ def propagate_recur(graph, activations, xcal, decay=0.8, new_adj=None,
     downstream_activations = np.clip(
         np.dot(new_adj.T, activations) * decay, 0, 1
     )
-
-    # not necessary?
     downstream_activations[xcal(downstream_activations) == 0] = 0
 
     if debug:
