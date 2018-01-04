@@ -91,16 +91,13 @@ def reweight_recur(graph, activations, xcal, debug=False):
     if debug:
         print(f"input activations: {activations}")
 
+    act_mesh = np.meshgrid(activations, activations)
+    min_acts = np.minimum(act_mesh[0], act_mesh[1])
+    adjust = xcal(min_acts)
     new_graph = copy.deepcopy(graph)
-
-    for i, act_from in enumerate(activations):
-        for j, act_to in enumerate(activations):
-            min_act = np.min([act_from, act_to])
-            new_graph.adj[i, j] += xcal(min_act)
-            new_graph.adj[j, i] += xcal(min_act)
-
-    np.fill_diagonal(new_graph.adj, 0)
+    new_graph.adj += adjust
     new_graph.adj = np.clip(new_graph.adj, 0, 1)
+    np.fill_diagonal(new_graph.adj, 0)
     return new_graph
 
 
