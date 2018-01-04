@@ -24,15 +24,15 @@ class GraphOperator(object):
         self.xcal_fx = xcal_fx
         self.decay = decay
 
-    def activate(self, activations):
+    def activate(self, activations, **kwargs):
         """Call operate_fx with stored arguments and return result."""
         return self.operate_fx(
-            self.graph, activations, self.xcal_fx, self.decay
+            self.graph, activations, self.xcal_fx, self.decay, **kwargs
         )
 
-    def activate_replace(self, activations):
+    def activate_replace(self, activations, **kwargs):
         """Replace self.graph with operate_fx result."""
-        self.graph = self.activate(activations)
+        self.graph = self.activate(activations, **kwargs)
         return self.graph
 
 
@@ -42,10 +42,11 @@ def operate_recur(graph, activations, xcal, decay):
     return reweight_recur(graph, new_activations, xcal)
 
 
-def operate_depth(graph, activations, xcal, decay):
+def operate_depth(graph, activations, xcal, decay, **kwargs):
     """Wrapper for breadth-first activation and reweighting."""
     activations = activations[None, :]
-    Ws, ACT = spread_activation(graph.adj, activations, xcal, gamma=decay)
+    Ws, ACT = spread_activation(graph.adj, activations, xcal, gamma=decay,
+                                **kwargs)
     result_graph = copy.deepcopy(graph)
     result_graph.adj = Ws[-1]
     return result_graph
