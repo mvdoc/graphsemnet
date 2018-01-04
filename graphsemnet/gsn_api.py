@@ -12,7 +12,7 @@ class GraphOperator(object):
         ---------
         graph : SemanticGraph
         operate_fx : function [graph, activations, xcal_fx, decay] ->
-                [SemanticGraph]
+                [SemanticGraph, new_activations]
             Function describing how to activate and reweight the graph
         xcal_fx : function [0, 1] -> float
             Scaling function for edge reweighting
@@ -23,6 +23,7 @@ class GraphOperator(object):
         self.operate_fx = operate_fx
         self.xcal_fx = xcal_fx
         self.decay = decay
+        self.last_activations = None
 
     def activate(self, activations, **kwargs):
         """Call operate_fx with stored arguments and return result."""
@@ -32,24 +33,26 @@ class GraphOperator(object):
 
     def activate_replace(self, activations, **kwargs):
         """Replace self.graph with operate_fx result."""
-        self.graph = self.activate(activations, **kwargs)
-        return self.graph
+        # XXX: we also want the last activation
+        self.graph, self.last_activations = \
+            self.activate(activations, **kwargs)
+        return self.graph, self.last_activations
 
 
-def operate_recur(graph, activations, xcal, decay):
+def operate_depth(graph, activations, xcal, decay):
     """Wrapper for depth-first activation and reweighting."""
     new_activations = propagate_recur(graph, activations, xcal, decay)
-    return reweight_recur(graph, new_activations, xcal)
+    return reweight_recur(graph, new_activations, xcal), new_activations
 
 
-def operate_depth(graph, activations, xcal, decay, **kwargs):
+def operate_breadth(graph, activations, xcal, decay, **kwargs):
     """Wrapper for breadth-first activation and reweighting."""
     activations = activations[None, :]
     Ws, ACT = spread_activation(graph.adj, activations, xcal, gamma=decay,
                                 **kwargs)
     result_graph = copy.deepcopy(graph)
     result_graph.adj = Ws[-1]
-    return result_graph
+    return result_graph, ACT[-1]
 
 
 def propagate_recur(graph, activations, xcal, decay=0.8, new_adj=None,
