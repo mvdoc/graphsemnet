@@ -24,42 +24,39 @@ class GraphOperator(object):
         self.xcal_fx = xcal_fx
         self.decay = decay
 
-    def activate(self, activations, **kwargs):
+    def activate(self, activations):
         """Call operate_fx with stored arguments and return result."""
         return self.operate_fx(
-            self.graph, activations, self.xcal_fx, self.decay, **kwargs
+            self.graph.adj, activations, self.xcal_fx, self.decay
         )
 
-    def activate_replace(self, activations, **kwargs):
+    def activate_replace(self, activations):
         """Replace self.graph with operate_fx result."""
-        self.graph = self.activate(activations, **kwargs)
-        return self.graph
+        self.graph.adj = self.activate(activations)
+        return self.graph.adj
 
 
-def operate_recur(graph, activations, xcal, decay):
+def operate_recur(adj, activations, xcal, decay):
     """Wrapper for depth-first activation and reweighting."""
-    new_activations = propagate_recur(graph, activations, xcal, decay)
-    return reweight_recur(graph, new_activations, xcal)
+    new_activations = propagate_recur(adj, activations, xcal, decay)
+    return reweight_recur(adj, new_activations, xcal)
 
 
-def operate_depth(graph, activations, xcal, decay, **kwargs):
+def operate_depth(adj, activations, xcal, decay):
     """Wrapper for breadth-first activation and reweighting."""
     activations = activations[None, :]
-    Ws, ACT = spread_activation(graph.adj, activations, xcal, gamma=decay,
-                                **kwargs)
-    result_graph = copy.deepcopy(graph)
-    result_graph.adj = Ws[-1]
-    return result_graph
+    Ws, ACT = spread_activation(adj, activations, xcal, gamma=decay)
+    return Ws[-1]
 
 
-def propagate_recur(graph, activations, xcal, decay=0.8, new_adj=None,
+def propagate_recur(adj, activations, xcal, decay=0.8, new_adj=None,
                     debug=False):
-    """Fire together?
+    """Fire together.
 
     activations: 1d vector of activation strengths for each node
     """
     if new_adj is None:
-        new_adj = copy.copy(graph.adj)
+        new_adj = copy.copy(adj)
     else:
         new_adj = copy.copy(new_adj)
 
@@ -67,8 +64,6 @@ def propagate_recur(graph, activations, xcal, decay=0.8, new_adj=None,
     downstream_activations = np.clip(
         np.dot(new_adj.T, activations) * decay, 0, 1
     )
-
-    # not necessary?
     downstream_activations[xcal(downstream_activations) == 0] = 0
 
     if debug:
@@ -79,12 +74,12 @@ def propagate_recur(graph, activations, xcal, decay=0.8, new_adj=None,
         return activations
     else:
         return activations + propagate_recur(
-            graph, downstream_activations, xcal,
+            adj, downstream_activations, xcal,
             decay=decay, new_adj=new_adj, debug=debug
         )
 
 
-def reweight_recur(graph, activations, xcal, debug=False):
+def reweight_recur(adj, activations, xcal, debug=False):
     """Wire together.
 
     activations: 1d vector of actiation strengths for each node
@@ -94,17 +89,12 @@ def reweight_recur(graph, activations, xcal, debug=False):
     if debug:
         print(f"input activations: {activations}")
 
-    new_graph = copy.deepcopy(graph)
-
-    for i, act_from in enumerate(activations):
-        for j, act_to in enumerate(activations):
-            min_act = np.min([act_from, act_to])
-            new_graph.adj[i, j] += xcal(min_act)
-            new_graph.adj[j, i] += xcal(min_act)
-
-    np.fill_diagonal(new_graph.adj, 0)
-    new_graph.adj = np.clip(new_graph.adj, 0, 1)
-    return new_graph
+    act_mesh = np.meshgrid(activations, activations)
+    min_acts = np.minimum(act_mesh[0], act_mesh[1])
+    adjust = xcal(min_acts)
+    new_adj = np.clip(adj + adjust, 0, 1)
+    np.fill_diagonal(new_adj, 0)
+    return new_adj
 
 
 def compute_adjacency(W):
